@@ -19,6 +19,7 @@ __pycache__/
 *.Rhistory
 
 # any figures
+figures/
 *.png
 *.svg
 
