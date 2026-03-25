@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import pickle
+from pathlib import Path
 
 import fsspec
 import matplotlib.pyplot as plt
@@ -198,7 +199,11 @@ def main() -> None:
         with fsspec.open(f"{s3_base}.pkl", "wb") as f:
             df_out.to_pickle(f)
         with fsspec.open(f"{s3_base}.png", "wb") as f:
-            fig.savefig(f, format="png", dpi=300, bbox_inches="tight")
+            fig.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+        with fsspec.open(f"{s3_base}.svg", "w") as f:
+            fig.savefig(f, format="svg", transparent=True, bbox_inches="tight")
+        local_png = Path.home() / "Downloads" / f"neighbor_scales_{args.target.replace('.', '_')}.png"
+        fig.savefig(local_png, dpi=300, transparent=False, bbox_inches="tight")
 
 
 if __name__ == "__main__":

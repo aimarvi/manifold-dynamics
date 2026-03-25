@@ -17,11 +17,11 @@ import visionlab_utils.storage as vst
 
 
 # Ad-hoc configuration
-TARGET = "09.MF1.F" # "19.Unknown.F"
+TARGET = "19.Unknown.F" # "19.Unknown.F"
 ALPHA = 0.05
 BIN_SIZE_MS = 20
 N_RANDOM = 100
-N_COMPONENTS = 3
+N_COMPONENTS = 2
 WINDOW_SIZE = 100
 STEP = 10
 RANDOM_STATE = 0
@@ -109,17 +109,17 @@ vmax = float(
 
 fig, axes = plt.subplots(1, 3, figsize=(14, 4), constrained_layout=True)
 
-sns.heatmap(angles_top, square=True, ax=axes[0], vmin=0, vmax=vmax, cbar=False)
+sns.heatmap(angles_top, square=True, ax=axes[0])# , vmin=0, vmax=vmax, cbar=False)
 axes[0].set_title("Top-k")
 axes[0].set_xlabel("time window")
 axes[0].set_ylabel("time window")
 
-sns.heatmap(angles_all, square=True, ax=axes[1], vmin=0, vmax=vmax, cbar=False)
+sns.heatmap(angles_all, square=True, ax=axes[1])# , vmin=0, vmax=vmax, cbar=False)
 axes[1].set_title("All")
 axes[1].set_xlabel("time window")
 axes[1].set_ylabel("")
 
-sns.heatmap(angles_random_mean, square=True, ax=axes[2], vmin=0, vmax=vmax, cbar=True)
+sns.heatmap(angles_random_mean, square=True, ax=axes[2])# , vmin=0, vmax=vmax, cbar=True)
 axes[2].set_title("Random mean")
 axes[2].set_xlabel("time window")
 axes[2].set_ylabel("")
@@ -144,7 +144,9 @@ if SAVE:
     with fsspec.open(f"{s3_base}.pkl", "wb") as f:
         pickle.dump(payload, f)
     with fsspec.open(f"{s3_base}.png", "wb") as f:
-        fig.savefig(f, format="png", dpi=300, bbox_inches="tight")
+        fig.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+    with fsspec.open(f"{s3_base}.svg", "w") as f:
+        fig.savefig(f, format="svg", transparent=True, bbox_inches="tight")
 
 download_png = Path.home() / "Downloads" / f"shifting_subspace_{TARGET}.png"
-fig.savefig(download_png, dpi=300, bbox_inches="tight")
+fig.savefig(download_png, dpi=300, transparent=False, bbox_inches="tight")

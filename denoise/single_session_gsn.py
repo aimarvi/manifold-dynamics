@@ -1,4 +1,5 @@
 import os, fsspec, time, sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -62,9 +63,12 @@ if not ims.exists(savepath):
         sns.despine(fig=fig, trim=True, offset=5)
         
         # save
-        outpath = os.path.join(outdir, f'{roi_uid}_w{win:02d}_covariance.png')
-        with fs.open(outpath, 'wb') as f:
+        s3_base = os.path.join(outdir, f'{roi_uid}_w{win:02d}_covariance')
+        with fs.open(f'{s3_base}.png', 'wb') as f:
             plt.savefig(f, dpi=300, transparent=True, bbox_inches='tight')
+        with fs.open(f'{s3_base}.svg', 'w') as f:
+            plt.savefig(f, format='svg', transparent=True, bbox_inches='tight')
+        plt.savefig(Path.home() / 'Downloads' / f'{roi_uid}_w{win:02d}_covariance.png', dpi=300, transparent=False, bbox_inches='tight')
         
         fig,ax = plt.subplots(1,1, figsize=(5,3))
         sns.lineplot(ncsnr_df, x='time', y='mean_abs_ncsnr', color='gray', ax=ax)
@@ -73,9 +77,12 @@ if not ims.exists(savepath):
         sns.despine(fig=fig, trim=True, offset=5)
         
         # save
-        outpath = os.path.join(outdir, f'{roi_uid}_w{win:02d}_ncsnr.png')
-        with fs.open(outpath, 'wb') as f:
+        s3_base = os.path.join(outdir, f'{roi_uid}_w{win:02d}_ncsnr')
+        with fs.open(f'{s3_base}.png', 'wb') as f:
             plt.savefig(f, dpi=300, transparent=True, bbox_inches='tight')
+        with fs.open(f'{s3_base}.svg', 'w') as f:
+            plt.savefig(f, format='svg', transparent=True, bbox_inches='tight')
+        plt.savefig(Path.home() / 'Downloads' / f'{roi_uid}_w{win:02d}_ncsnr.png', dpi=300, transparent=False, bbox_inches='tight')
         
         print(f'Saved figures for {roi_uid}!')
 else:

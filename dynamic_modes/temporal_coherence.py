@@ -460,23 +460,35 @@ if SAVE:
     with fsspec.open(f"{s3_base}.pkl", "wb") as f:
         pickle.dump(payload, f)
     with fsspec.open(f"{s3_base}_cumvar.png", "wb") as f:
-        fig_cum.savefig(f, format="png", dpi=300, bbox_inches="tight")
+        fig_cum.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+    with fsspec.open(f"{s3_base}_cumvar.svg", "w") as f:
+        fig_cum.savefig(f, format="svg", transparent=True, bbox_inches="tight")
     with fsspec.open(f"{s3_base}_pca_pair.png", "wb") as f:
-        fig_pair.savefig(f, format="png", dpi=300, bbox_inches="tight")
+        fig_pair.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+    with fsspec.open(f"{s3_base}_pca_pair.svg", "w") as f:
+        fig_pair.savefig(f, format="svg", transparent=True, bbox_inches="tight")
     with fsspec.open(f"{s3_base}_pca_average.png", "wb") as f:
-        fig_avg.savefig(f, format="png", dpi=300, bbox_inches="tight")
+        fig_avg.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+    with fsspec.open(f"{s3_base}_pca_average.svg", "w") as f:
+        fig_avg.savefig(f, format="svg", transparent=True, bbox_inches="tight")
     with fsspec.open(f"{s3_base}_example.png", "wb") as f:
-        fig_example.savefig(f, format="png", dpi=300, bbox_inches="tight")
+        fig_example.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+    with fsspec.open(f"{s3_base}_example.svg", "w") as f:
+        fig_example.savefig(f, format="svg", transparent=True, bbox_inches="tight")
     with fsspec.open(f"{s3_base}_autocorr.png", "wb") as f:
-        fig_auto.savefig(f, format="png", dpi=300, bbox_inches="tight")
+        fig_auto.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+    with fsspec.open(f"{s3_base}_autocorr.svg", "w") as f:
+        fig_auto.savefig(f, format="svg", transparent=True, bbox_inches="tight")
     with fsspec.open(f"{s3_base}_constraints.png", "wb") as f:
-        fig_constraints.savefig(f, format="png", dpi=300, bbox_inches="tight")
+        fig_constraints.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+    with fsspec.open(f"{s3_base}_constraints.svg", "w") as f:
+        fig_constraints.savefig(f, format="svg", transparent=True, bbox_inches="tight")
     vprint(f"Saved outputs to {s3_base}*")
 
 download_dir = Path.home() / "Downloads"
-fig_cum.savefig(download_dir / "temporal_coherence_cumvar.png", dpi=300, bbox_inches="tight")
-fig_pair.savefig(download_dir / "temporal_coherence_pca_pair.png", dpi=300, bbox_inches="tight")
-fig_avg.savefig(download_dir / "temporal_coherence_pca_average.png", dpi=300, bbox_inches="tight")
-fig_example.savefig(download_dir / "temporal_coherence_example.png", dpi=300, bbox_inches="tight")
-fig_auto.savefig(download_dir / "temporal_coherence_autocorr.png", dpi=300, bbox_inches="tight")
-fig_constraints.savefig(download_dir / "temporal_coherence_constraints.png", dpi=300, bbox_inches="tight")
+fig_cum.savefig(download_dir / "temporal_coherence_cumvar.png", dpi=300, transparent=False, bbox_inches="tight")
+fig_pair.savefig(download_dir / "temporal_coherence_pca_pair.png", dpi=300, transparent=False, bbox_inches="tight")
+fig_avg.savefig(download_dir / "temporal_coherence_pca_average.png", dpi=300, transparent=False, bbox_inches="tight")
+fig_example.savefig(download_dir / "temporal_coherence_example.png", dpi=300, transparent=False, bbox_inches="tight")
+fig_auto.savefig(download_dir / "temporal_coherence_autocorr.png", dpi=300, transparent=False, bbox_inches="tight")
+fig_constraints.savefig(download_dir / "temporal_coherence_constraints.png", dpi=300, transparent=False, bbox_inches="tight")

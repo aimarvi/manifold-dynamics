@@ -124,4 +124,4 @@ for c in tqdm(range(best_k)):
     plt.xlabel("Time (ms)")
     plt.ylabel("Time (ms)")
     plt.tight_layout()
-    plt.savefig(f'./cluster_{c}.png', format='svg', dpi=300)
+    plt.savefig(f'./cluster_{c}.png', dpi=300, transparent=False)

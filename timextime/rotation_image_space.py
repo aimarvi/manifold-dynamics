@@ -3,11 +3,13 @@ from __future__ import annotations
 import pickle
 from pathlib import Path
 
+import fsspec
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
 
 import manifold_dynamics.neural_utils as nu
+import manifold_dynamics.paths as pth
 import manifold_dynamics.tuning_utils as tut
 
 
@@ -159,5 +161,10 @@ for col, (label, sim_cv) in enumerate(set_rotation.items()):
     ax_bar.text(0, baseline_mean, f"{baseline_mean:.3f}", ha="center", va="bottom")
     ax_bar.text(1, post_mean, f"{post_mean:.3f}", ha="center", va="bottom")
 
-fig.savefig(OUTPUT_PATH, dpi=300, bbox_inches="tight")
+s3_base = f"{pth.SAVEDIR}/timextime/rotation_image_space/{ROI_TARGET}"
+with fsspec.open(f"{s3_base}.png", "wb") as f:
+    fig.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+with fsspec.open(f"{s3_base}.svg", "w") as f:
+    fig.savefig(f, format="svg", transparent=True, bbox_inches="tight")
+fig.savefig(OUTPUT_PATH, dpi=300, transparent=False, bbox_inches="tight")
 print(f"Saved figure to: {OUTPUT_PATH}")

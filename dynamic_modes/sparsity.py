@@ -250,7 +250,9 @@ if SAVE:
     with fsspec.open(f"{s3_base}.pkl", "wb") as f:
         pickle.dump(payload, f)
     with fsspec.open(f"{s3_base}.png", "wb") as f:
-        fig.savefig(f, format="png", dpi=300, bbox_inches="tight")
+        fig.savefig(f, format="png", dpi=300, transparent=True, bbox_inches="tight")
+    with fsspec.open(f"{s3_base}.svg", "w") as f:
+        fig.savefig(f, format="svg", transparent=True, bbox_inches="tight")
 
     download_dir = Path.home() / "Downloads"
-    fig.savefig(download_dir / f"sparsity_{TARGET}.png", dpi=300, bbox_inches="tight")
+    fig.savefig(download_dir / f"sparsity_{TARGET}.png", dpi=300, transparent=False, bbox_inches="tight")
