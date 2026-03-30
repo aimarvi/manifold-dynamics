@@ -1,12 +1,10 @@
 from __future__ import annotations
 
+import argparse
 import pickle
-from pathlib import Path
 
 import fsspec
-import matplotlib.pyplot as plt
 import numpy as np
-import seaborn as sns
 from scipy.linalg import subspace_angles
 from sklearn.decomposition import PCA
 
@@ -16,136 +14,192 @@ import manifold_dynamics.tuning_utils as tut
 import visionlab_utils.storage as vst
 
 
-# Ad-hoc configuration
-TARGET = "09.MF1.F" # "19.Unknown.F"
-ALPHA = 0.05
-BIN_SIZE_MS = 20
-N_RANDOM = 100
-N_COMPONENTS = 3
-WINDOW_SIZE = 100
-STEP = 10
-RANDOM_STATE = 0
-SAVE = False
-VERBOSE = True
+def main() -> None:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Precompute principal-angle spectra for one ROI target across sliding "
+            "time-window subspaces and save a lightweight payload."
+        )
+    )
+    parser.add_argument(
+        "--target",
+        type=str,
+        required=True,
+        help=(
+            "ROI UID (4-part: SesIdx.RoiIndex.AREALABEL.Categoty) "
+            "or ROI key (3-part: RoiIndex.AREALABEL.Categoty)."
+        ),
+    )
+    parser.add_argument("--top-k", type=int, default=None)
+    parser.add_argument("--alpha", type=float, default=0.05)
+    parser.add_argument("--bin-size-ms", type=int, default=20)
+    parser.add_argument("--window-size", type=int, default=100)
+    parser.add_argument("--step", type=int, default=10)
+    parser.add_argument("--n-components", type=int, default=10)
+    parser.add_argument("--n-random", type=int, default=100)
+    parser.add_argument("--random-state", type=int, default=0)
+    parser.add_argument(
+        "--output",
+        type=str,
+        default=None,
+        help=(
+            "Optional output path. Defaults to "
+            "s3://.../manifold-dynamics/dynamic_modes/shifting_subspace/<target>.pkl"
+        ),
+    )
+    parser.add_argument("--save", action="store_true")
+    parser.add_argument("--verbose", action="store_true")
+    args = parser.parse_args()
 
+    def vprint(msg: str) -> None:
+        if args.verbose:
+            print(msg)
 
-def vprint(msg: str) -> None:
-    if VERBOSE:
-        print(msg)
+    target_parts = args.target.split(".")
+    if len(target_parts) not in (3, 4):
+        raise ValueError(
+            "Invalid --target format. Use 4-part UID "
+            "(SesIdx.RoiIndex.AREALABEL.Categoty) or 3-part ROI key "
+            "(RoiIndex.AREALABEL.Categoty)."
+        )
+    if len(target_parts) == 4:
+        roi_label = f"{int(target_parts[1]):02d}.{target_parts[2]}.{target_parts[3]}"
+    else:
+        roi_label = f"{int(target_parts[0]):02d}.{target_parts[1]}.{target_parts[2]}"
 
+    topk_local = vst.fetch(f"{pth.OTHERS}/topk_vals.pkl")
+    with open(topk_local, "rb") as f:
+        topk_vals = pickle.load(f)
 
-target_parts = TARGET.split(".")
-roi_label = f"{int(target_parts[0]):02d}.{target_parts[1]}.{target_parts[2]}"
+    top_k = args.top_k
+    if top_k is None:
+        if roi_label not in topk_vals:
+            raise ValueError(f"No top-k entry found for ROI: {roi_label}")
+        top_k = int(topk_vals[roi_label]["k"])
+    elif top_k < 1:
+        raise ValueError(f"--top-k must be >= 1, got {top_k}")
 
-topk_local = vst.fetch(f"{pth.OTHERS}/topk_vals.pkl")
-with open(topk_local, "rb") as f:
-    topk_vals = pickle.load(f)
-top_k = int(topk_vals[roi_label]["k"])
+    raster_4d = nu.significant_trial_raster(
+        roi_uid=args.target,
+        alpha=args.alpha,
+        bin_size_ms=args.bin_size_ms,
+    )
+    raster_3d = np.nanmean(raster_4d, axis=3)
+    image_order = np.asarray(tut.rank_images_by_response(raster_3d), dtype=int)
 
-raster_4d = nu.significant_trial_raster(TARGET, alpha=ALPHA, bin_size_ms=BIN_SIZE_MS)
-raster_3d = np.nanmean(raster_4d, axis=3)
-image_order = tut.rank_images_by_response(raster_3d)
-idx_topk = np.asarray(image_order[:top_k], dtype=int)
-candidate_idxs = np.asarray(image_order[top_k:], dtype=int)
+    if top_k > image_order.size:
+        raise ValueError(
+            f"top_k={top_k} exceeds the number of available images ({image_order.size})"
+        )
 
-vprint(f"Resolved ROI target: {TARGET}")
-vprint(f"Using top-k = {top_k}")
-vprint(f"Responsive raster shape: {raster_4d.shape}")
-vprint(f"Trial-averaged PSTH shape: {raster_3d.shape}")
+    idx_topk = image_order[:top_k]
+    candidate_idxs = image_order[top_k:]
 
-time_starts = np.arange(0, raster_3d.shape[1] - WINDOW_SIZE, STEP)
-n_time = len(time_starts)
-n_components = min(N_COMPONENTS, top_k, raster_3d.shape[0])
-if n_components < 1:
-    raise ValueError(f"Invalid number of subspace dimensions: {n_components}")
-if n_components != N_COMPONENTS:
-    vprint(f"Adjusted n_components from {N_COMPONENTS} to {n_components}")
+    if args.window_size < 1:
+        raise ValueError(f"--window-size must be >= 1, got {args.window_size}")
+    if args.step < 1:
+        raise ValueError(f"--step must be >= 1, got {args.step}")
+    if raster_3d.shape[1] < args.window_size:
+        raise ValueError(
+            f"window_size={args.window_size} exceeds time axis length ({raster_3d.shape[1]})"
+        )
 
-rng = np.random.default_rng(RANDOM_STATE)
-random_idxs = np.stack(
-    [rng.choice(candidate_idxs, size=top_k, replace=False) for _ in range(N_RANDOM)],
-    axis=0,
-)
+    time_starts = np.arange(0, raster_3d.shape[1] - args.window_size, args.step, dtype=int)
+    if time_starts.size == 0:
+        raise ValueError("No valid sliding windows were generated.")
 
+    n_components = min(args.n_components, top_k, raster_3d.shape[0])
+    if n_components < 1:
+        raise ValueError(f"Invalid number of subspace dimensions: {n_components}")
 
-def subspace_matrix(indices: np.ndarray) -> np.ndarray:
+    rng = np.random.default_rng(args.random_state)
+    if candidate_idxs.size >= top_k and args.n_random > 0:
+        random_idxs = np.stack(
+            [rng.choice(candidate_idxs, size=top_k, replace=False) for _ in range(args.n_random)],
+            axis=0,
+        )
+    else:
+        random_idxs = np.empty((0, top_k), dtype=int)
+        if args.n_random > 0:
+            vprint(
+                "Skipping random index generation because there are not enough "
+                "non-top-k candidate images."
+            )
+
+    vprint(f"Resolved ROI target: {args.target}")
+    vprint(f"Using top-k = {top_k}")
+    vprint(f"Responsive raster shape: {raster_4d.shape}")
+    vprint(f"Trial-averaged PSTH shape: {raster_3d.shape}")
+    vprint(f"Using n_components = {n_components}")
+
     subspaces = []
     for t in time_starts:
-        R_t = np.nanmean(raster_3d[:, t : t + WINDOW_SIZE, :], axis=1).T
-        A_t = PCA(n_components=n_components).fit(R_t[indices]).components_.T
-        subspaces.append(A_t)
+        R_t = np.nanmean(raster_3d[:, t : t + args.window_size, :], axis=1).T
+        subspaces.append(
+            {
+                "top": PCA(n_components=n_components).fit(R_t[idx_topk]).components_.T,
+                "all": PCA(n_components=n_components).fit(R_t).components_.T,
+            }
+        )
 
-    angles_tt = np.full((n_time, n_time), np.nan, dtype=float)
+    n_time = time_starts.size
+    principal_angles_top = np.full((n_time, n_time, n_components), np.nan, dtype=float)
+    principal_angles_all = np.full((n_time, n_time, n_components), np.nan, dtype=float)
+    principal_angles_random = np.full(
+        (random_idxs.shape[0], n_time, n_time, n_components),
+        np.nan,
+        dtype=float,
+    )
+
     for i in range(n_time):
         for j in range(n_time):
-            angles_tt[i, j] = float(np.degrees(subspace_angles(subspaces[i], subspaces[j])).mean())
-    return angles_tt
+            principal_angles_top[i, j] = np.degrees(
+                subspace_angles(subspaces[i]["top"], subspaces[j]["top"])
+            )
+            principal_angles_all[i, j] = np.degrees(
+                subspace_angles(subspaces[i]["all"], subspaces[j]["all"])
+            )
 
+    for r, idx_rand in enumerate(random_idxs):
+        random_subspaces = []
+        for t in time_starts:
+            R_t = np.nanmean(raster_3d[:, t : t + args.window_size, :], axis=1).T
+            random_subspaces.append(
+                PCA(n_components=n_components).fit(R_t[idx_rand]).components_.T
+            )
+        for i in range(n_time):
+            for j in range(n_time):
+                principal_angles_random[r, i, j] = np.degrees(
+                    subspace_angles(random_subspaces[i], random_subspaces[j])
+                )
 
-angles_top = subspace_matrix(idx_topk)
-angles_all = subspace_matrix(np.arange(raster_3d.shape[2], dtype=int))
-
-angles_random = np.full((N_RANDOM, n_time, n_time), np.nan, dtype=float)
-for i, idx_rand in enumerate(random_idxs):
-    angles_random[i] = subspace_matrix(idx_rand)
-
-# Averaging angle matrices is the cleanest random reference here because
-# subspaces themselves do not have a meaningful elementwise average basis.
-angles_random_mean = np.nanmean(angles_random, axis=0)
-
-vprint(f"Top mean angle: {np.nanmean(angles_top):.6f}")
-vprint(f"All mean angle: {np.nanmean(angles_all):.6f}")
-vprint(f"Random mean angle: {np.nanmean(angles_random_mean):.6f}")
-
-vmax = float(
-    np.nanmax(
-        [
-            np.nanmax(angles_top),
-            np.nanmax(angles_all),
-            np.nanmax(angles_random_mean),
-        ]
-    )
-)
-
-fig, axes = plt.subplots(1, 3, figsize=(14, 4), constrained_layout=True)
-
-sns.heatmap(angles_top, square=True, ax=axes[0], vmin=0, vmax=vmax, cbar=False)
-axes[0].set_title("Top-k")
-axes[0].set_xlabel("time window")
-axes[0].set_ylabel("time window")
-
-sns.heatmap(angles_all, square=True, ax=axes[1], vmin=0, vmax=vmax, cbar=False)
-axes[1].set_title("All")
-axes[1].set_xlabel("time window")
-axes[1].set_ylabel("")
-
-sns.heatmap(angles_random_mean, square=True, ax=axes[2], vmin=0, vmax=vmax, cbar=True)
-axes[2].set_title("Random mean")
-axes[2].set_xlabel("time window")
-axes[2].set_ylabel("")
-
-fig.suptitle(f"{roi_label} | window={WINDOW_SIZE} step={STEP} dims={n_components}")
-
-if SAVE:
-    s3_base = f"{pth.SAVEDIR}/dynamic_modes/shifting_subspace/{TARGET}"
     payload = {
-        "roi": roi_label,
-        "target": TARGET,
+        "target": args.target,
         "top_k": int(top_k),
         "n_components": int(n_components),
-        "window_size": int(WINDOW_SIZE),
-        "step": int(STEP),
+        "window_size": int(args.window_size),
+        "step": int(args.step),
         "time_starts": time_starts,
-        "angles_top": angles_top,
-        "angles_all": angles_all,
-        "angles_random": angles_random,
-        "angles_random_mean": angles_random_mean,
+        "principal_angles_top": principal_angles_top,
+        "principal_angles_all": principal_angles_all,
+        "principal_angles_random": principal_angles_random,
     }
-    with fsspec.open(f"{s3_base}.pkl", "wb") as f:
-        pickle.dump(payload, f)
-    with fsspec.open(f"{s3_base}.png", "wb") as f:
-        fig.savefig(f, format="png", dpi=300, bbox_inches="tight")
 
-download_png = Path.home() / "Downloads" / f"shifting_subspace_{TARGET}.png"
-fig.savefig(download_png, dpi=300, bbox_inches="tight")
+    print(f"roi: {roi_label}")
+    print(f"target: {args.target}")
+    print(f"top_k: {top_k}")
+    print(f"n_components: {n_components}")
+    print(f"n_windows: {time_starts.size}")
+    print(f"n_random_sets: {random_idxs.shape[0]}")
 
+    if args.save:
+        output = args.output
+        if output is None:
+            output = f"{pth.SAVEDIR}/dynamic_modes/shifting_subspace/{args.target}.pkl"
+        with fsspec.open(output, "wb") as f:
+            pickle.dump(payload, f)
+        vprint(f"Saved payload to {output}")
+
+
+if __name__ == "__main__":
+    main()
