@@ -56,12 +56,22 @@ cmap = [
     'dimgray',     # unknown
 ]
 
+cmap = [
+    'lightgrey',  # background
+    'red',      # face
+    'red',      # body
+    'red',      # object
+    'red',      # color
+    'red',      # scene
+    'red',      # unknown
+]
+
 # =========================
 # knobs
 # =========================
 ap_axis = 1        # usually y in NMT
-ap_tol = 0.75
-roi_radius = 1.0
+ap_tol = 0.5
+roi_radius = 1.5 
 charm_level = 'Level 4'
 
 # =========================
@@ -174,7 +184,9 @@ for roi, ap_mm in ap_targets.items():
     if 'unknown' in fam:
         continue
     seed = pick_seed(coords, labels_at_verts, family_allowed[fam], ap_mm)
-    mask = geodesic_ball(mesh, seed, roi_radius)
+    # mask = geodesic_ball(mesh, seed, roi_radius * np.random.uniform(0.8, 1.2)) & np.isin(labels_at_verts, list(family_allowed[fam]))
+    mask = geodesic_ball(mesh, seed, roi_radius) & np.isin(labels_at_verts, list(family_allowed[fam]))
+    # mask = geodesic_ball(mesh, seed, roi_radius)
     labels[mask] = family_label[fam]
 
 mesh.point_data['roi_family'] = labels
@@ -198,8 +210,8 @@ pl.set_background('white')
 pl.reset_camera()
 
 print('\nStarting PyVista server...')
-# look from below and slightly from the right
-pl.view_vector((-0.6, 0, -1), viewup=(0, 1, 0))
+# pl.view_vector((-0.6, 0, -1), viewup=(0, 1, 0)) # look from below and slightly from the right
+pl.view_vector((-1, 0, 0), viewup=(0, 0, 1)) # lateral view
 pl.show(auto_close=False)
 pl.screenshot('~/Downloads/macaque_brain.png', transparent_background=True)
 pl.close()

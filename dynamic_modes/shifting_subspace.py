@@ -35,7 +35,7 @@ def main() -> None:
     parser.add_argument("--bin-size-ms", type=int, default=20)
     parser.add_argument("--window-size", type=int, default=100)
     parser.add_argument("--step", type=int, default=10)
-    parser.add_argument("--n-components", type=int, default=10)
+    parser.add_argument("--n-components", type=int, default=2)
     parser.add_argument("--n-random", type=int, default=100)
     parser.add_argument("--random-state", type=int, default=0)
     parser.add_argument(
@@ -185,12 +185,13 @@ def main() -> None:
         "principal_angles_random": principal_angles_random,
     }
 
-    print(f"roi: {roi_label}")
-    print(f"target: {args.target}")
-    print(f"top_k: {top_k}")
-    print(f"n_components: {n_components}")
-    print(f"n_windows: {time_starts.size}")
-    print(f"n_random_sets: {random_idxs.shape[0]}")
+    vprint(f"roi: {roi_label}")
+    vprint(f"target: {args.target}")
+    vprint(f"top_k: {top_k}")
+    vprint(f"n_components: {n_components}")
+    vprint(f"n_windows: {time_starts.size}")
+    vprint(f"n_random_sets: {random_idxs.shape[0]}")
+    vprint(f"principal angle sizes: {principal_angles_top.shape}")
 
     if args.save:
         output = args.output

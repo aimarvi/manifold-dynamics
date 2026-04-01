@@ -89,7 +89,7 @@ def main() -> None:
     )
 
     use_cbar = args.colorbar
-    fig = plt.figure(figsize=(3 + 0.4 * use_cbar, 3))
+    fig = plt.figure(figsize=(2 + 0.5 * use_cbar, 2))
     if use_cbar:
         gs = fig.add_gridspec(1, 2, width_ratios=[20, 1])
         ax = fig.add_subplot(gs[0, 0])
@@ -115,26 +115,28 @@ def main() -> None:
     tick_positions = np.arange(0, R.shape[0]+50, 50)
     tick_labels = tick_positions + args.tstart
     ax.set_xticks(tick_positions)
-    ax.set_xticklabels(tick_labels)
     ax.set_yticks(tick_positions)
-    ax.set_xlabel("Time (msec)")
-    ax.set_ylabel("Time")
+    ax.set_yticklabels(tick_labels)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    # ax.set_xlabel("Time (msec)")
+    # ax.set_ylabel("Time")
     sns.despine(ax=ax, trim=True, offset=5)
     fig.tight_layout()
 
     if args.save:
         s3_png = f"{pth.SAVEDIR}/timextime/{args.savedir}/{args.target}.png"
         s3_svg = f"{pth.SAVEDIR}/timextime/{args.savedir}/{args.target}.svg"
-        local_png = Path.home() / "Downloads" / f"{args.savedir}_{args.target.replace('.', '_')}.png"
         with fsspec.open(s3_png, "wb") as f:
             fig.savefig(f, format="png", dpi=args.dpi, transparent=True, bbox_inches="tight")
         with fsspec.open(s3_svg, "w") as f:
             fig.savefig(f, format="svg", transparent=True, bbox_inches="tight")
-        fig.savefig(local_png, dpi=args.dpi, transparent=False, bbox_inches="tight")
         vprint(f"Saved figure to {s3_png}")
         vprint(f"Saved figure to {s3_svg}")
         vprint(f"Saved figure to {local_png}")
 
+    local_png = Path.home() / "Downloads" / f"{args.savedir}_{args.target.replace('.', '_')}.png"
+    fig.savefig(local_png, dpi=args.dpi, transparent=False, bbox_inches="tight")
     plt.close(fig)
 
 
