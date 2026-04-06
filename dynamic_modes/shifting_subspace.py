@@ -173,16 +173,19 @@ def main() -> None:
                     subspace_angles(random_subspaces[i], random_subspaces[j])
                 )
 
-    payload = {
+    params = {
         "target": args.target,
         "top_k": int(top_k),
         "n_components": int(n_components),
         "window_size": int(args.window_size),
         "step": int(args.step),
         "time_starts": time_starts,
-        "principal_angles_top": principal_angles_top,
-        "principal_angles_all": principal_angles_all,
-        "principal_angles_random": principal_angles_random,
+    }
+    payload = {
+        "parameters": params,
+        "top": principal_angles_top,
+        "all": principal_angles_all,
+        "random": principal_angles_random,
     }
 
     vprint(f"roi: {roi_label}")
