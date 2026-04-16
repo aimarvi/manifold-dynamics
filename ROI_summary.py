@@ -231,14 +231,14 @@ def main() -> None:
     fig.suptitle(args.target, y=1.015)
 
     if args.save:
-        s3_png = f"{pth.SAVEDIR}/analysis/{args.target}.png"
+        s3_png = f"{pth.SAVEDIR}/ROI_summary/{args.target}.png"
         with fsspec.open(s3_png, "wb") as f:
             fig.savefig(f, format="png", dpi=300, bbox_inches="tight")
         vprint(f"Saved figure to {s3_png}")
 
-    download_png = Path.home() / "Downloads" / f"analysis_{args.target}.png"
-    fig.savefig(download_png, dpi=300, bbox_inches="tight")
-    plt.show()
+    # download_png = Path.home() / "Downloads" / f"analysis_{args.target}.png"
+    # fig.savefig(download_png, dpi=300, bbox_inches="tight")
+    # plt.show()
 
 
 if __name__ == "__main__":

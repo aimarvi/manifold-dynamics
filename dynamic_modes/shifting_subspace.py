@@ -38,15 +38,7 @@ def main() -> None:
     parser.add_argument("--n-components", type=int, default=2)
     parser.add_argument("--n-random", type=int, default=100)
     parser.add_argument("--random-state", type=int, default=0)
-    parser.add_argument(
-        "--output",
-        type=str,
-        default=None,
-        help=(
-            "Optional output path. Defaults to "
-            "s3://.../manifold-dynamics/dynamic_modes/shifting_subspace/<target>.pkl"
-        ),
-    )
+    parser.add_argument("--output", type=str, default="dynamic_modes/shifting_subspace")
     parser.add_argument("--save", action="store_true")
     parser.add_argument("--verbose", action="store_true")
     args = parser.parse_args()
@@ -197,9 +189,7 @@ def main() -> None:
     vprint(f"principal angle sizes: {principal_angles_top.shape}")
 
     if args.save:
-        output = args.output
-        if output is None:
-            output = f"{pth.SAVEDIR}/dynamic_modes/shifting_subspace/{args.target}.pkl"
+        output = f"{pth.SAVEDIR}/{args.output}/{args.target}.pkl"
         with fsspec.open(output, "wb") as f:
             pickle.dump(payload, f)
         vprint(f"Saved payload to {output}")

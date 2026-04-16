@@ -3,7 +3,7 @@
 #SBATCH -c 1
 #SBATCH --mem=80G
 #SBATCH -t 01:00:00
-#SBATCH -o errlog/lag.%j.out
+#SBATCH -o errlog/ROI-summary.%j.out
 
 set -euo pipefail
 
@@ -51,5 +51,6 @@ fi
 # uv run python eigenspectra.py --target "$target" --save --verbose --log-scale
 # uv run python alexnet/compute_centroids.py --target "$target" --layer-key classifier.4 --save --verbose
 # uv run python timextime/ed_main.py --target "$target" --verbose --save
-# uv run python dynamic_modes/shifting_subpsace.py --target "$target" --verbose --save
-uv run python timextime/lag_model.py --target "$target" --verbose --save
+# uv run python dynamic_modes/shifting_subspace.py --target "$target" --verbose --save
+# uv run python timextime/lag_model.py --target "$target" --verbose --save
+uv run python ROI_summary.py --target "$target" --verbose --save
