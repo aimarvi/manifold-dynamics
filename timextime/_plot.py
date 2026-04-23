@@ -68,20 +68,20 @@ def rdm_gif(dat, ROI, mode='top', step=10, k_max=200, metric='correlation',
     return outpath
 
 # ============== USAGE ==================
-DATA_DIR = '../../datasets/NNN/object_roi_data.pkl'
+DATA_DIR = './../../datasets/NNN/object_roi_data.pkl'
 dat = pd.read_pickle(DATA_DIR)
 rois = list(dat['roi'].unique())
 # choose ROI and save path
 for ROI in tqdm(rois):
-    OUT_DIR=f'../../gifs/{ROI}_timextime_slow.gif'
+    OUT_DIR=f'~/Downloads/{ROI}_timextime_slow.gif'
     out = rdm_gif(dat, ROI, mode='top', step=10, k_max=500, metric='correlation')
     
     # change fps
     out.save(OUT_DIR, writer=PillowWriter(fps=6))
     print("Saved:", ROI)
     
-    # shuffled version
-    OUT_DIR=f'../../gifs/{ROI}_shuff_timextime_slow.gif'
-    out = rdm_gif(dat, ROI, mode='shuffle', step=10, k_max=500, metric='correlation')
-    out.save(OUT_DIR, writer=PillowWriter(fps=6))
-    print("Saved:", ROI)
+#     # shuffled version
+#     OUT_DIR=f'../../gifs/{ROI}_shuff_timextime_slow.gif'
+#     out = rdm_gif(dat, ROI, mode='shuffle', step=10, k_max=500, metric='correlation')
+#     out.save(OUT_DIR, writer=PillowWriter(fps=6))
+#     print("Saved:", ROI)

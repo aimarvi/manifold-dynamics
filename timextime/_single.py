@@ -109,9 +109,10 @@ if __name__ == '__main__':
     # ROI_LIST = ['Unknown_19_F']# , 'MF1_7_F', 'MF1_8_F', 'MF1_9_F']
     # ROI_LIST = ['PITP4_10_O', 'Unknown_6_O', 'MO1s2_5_O', 'Unknown_16_O',
     #  'Unknown_26_O', 'AO5_25_O']
-    ROI_LIST = ['Unknown_19_F', 'MF1_8_F', 'MF1_9_F', 'MF1_7_F']
+    # ROI_LIST = ['Unknown_19_F', 'MF1_8_F', 'MF1_9_F', 'MF1_7_F']
+    ROI_LIST = ["MF1_7_F"]
 
-    SAVE_DIR = './../../../buckets/manifold-dynamics/time-time/increasing-scale/'
+    SAVE_DIR = '~/Downloads/'
     if not os.path.exists(SAVE_DIR):
         os.makedirs(SAVE_DIR)
 
