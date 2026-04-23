@@ -3,7 +3,7 @@
 #SBATCH -c 1
 #SBATCH --mem=80G
 #SBATCH -t 01:00:00
-#SBATCH -o errlog/ROI-summary.%j.out
+#SBATCH -o errlog/dataset.%j.out
 
 set -euo pipefail
 
@@ -53,4 +53,5 @@ fi
 # uv run python timextime/ed_main.py --target "$target" --verbose --save
 # uv run python dynamic_modes/shifting_subspace.py --target "$target" --verbose --save
 # uv run python timextime/lag_model.py --target "$target" --verbose --save
-uv run python ROI_summary.py --target "$target" --verbose --save
+# uv run python ROI_summary.py --target "$target" --verbose --save
+uv run python cindy.py "$target"
