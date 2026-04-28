@@ -210,7 +210,7 @@ def geo_rdm(
     X = trial_averaged_psth(dat, roi)
 
     order = rank_images_by_response(X) if mode == "top" else rng.permutation(X.shape[2])
-    sizes = [k for k in range(step, min(k_max, X.shape[2]) + 1, step)]
+    sizes = [k for k in range(max(step,2), min(k_max, X.shape[2]) + 1, step)]
 
     rdms = []
     for k in tqdm(sizes):
